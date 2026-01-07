@@ -1,0 +1,78 @@
+[
+  {
+    "key": "1",
+    "fileName": "Dr. AlishaKarim_0006_45855",
+    "category": "Referral",
+    "tags": "Refer",
+    "reason": "This follows the known pattern of a Referral file.",
+    "status": "Completed",
+    "pdfFile": "src/images/SampleReport.pdf",
+    "confidence": 10,
+    "referralInfo": [
+      "Specialist Name: Dr.Carter",
+      "Receiving Physician: Dr. Emily Novak",
+      "Patient Name: Ms.Reyes",
+      "Patient ID: Not found",
+      "Main Medical Problem: Chronic abdominal pain",
+      "Consultation Type: Requesting more information",
+      "Outcome Indicated: Requesting more information"
+    ]
+  },
+  {
+    "key": "2",
+    "fileName": "Dr. EmilyNovak_0007_45855",
+    "category": "Referral",
+    "tags": "Referral, Refer, Assess",
+    "reason": "Detected 1 term consistent with Referral document.",
+    "status": "Completed",
+    "pdfFile": "src/images/SampleReport.pdf",
+    "confidence": 80,
+    "referralInfo": [
+      "Specialist Name: Dr.Carter",
+      "Receiving Physician: Dr. Emily Novak",
+      "Patient Name: Ms.Reyes",
+      "Patient ID: Not found",
+      "Main Medical Problem: Chronic abdominal pain",
+      "Consultation Type: Requesting more information",
+      "Outcome Indicated: Requesting more information"
+    ]
+  },
+  {
+    "key": "3",
+    "fileName": "Dr. EmilyNovak_0007_45855",
+    "category": "Referral",
+    "tags": "Referral, Refer, Assess",
+    "reason": "Detected 1 term consistent with Referral document.",
+    "status": "Completed",
+    "pdfFile": "src/images/SampleReport.pdf",
+    "confidence": 60,
+    "referralInfo": [
+      "Specialist Name: Dr.Carter",
+      "Receiving Physician: Dr. Emily Novak",
+      "Patient Name: Ms.Reyes",
+      "Patient ID: Not found",
+      "Main Medical Problem: Chronic abdominal pain",
+      "Consultation Type: Requesting more information",
+      "Outcome Indicated: Requesting more information"
+    ]
+  },
+  {
+    "key": "4",
+    "fileName": "Dr. EmilyNovak_0007_45855",
+    "category": "Referral",
+    "tags": "Referral, Refer, Assess",
+    "reason": "Detected 1 term consistent with Referral document.",
+    "status": "Completed",
+    "pdfFile": "src/images/SampleReport.pdf",
+    "confidence": 40,
+    "referralInfo": [
+      "Specialist Name: Dr.Carter",
+      "Receiving Physician: Dr. Emily Novak",
+      "Patient Name: Ms.Reyes",
+      "Patient ID: Not found",
+      "Main Medical Problem: Chronic abdominal pain",
+      "Consultation Type: Requesting more information",
+      "Outcome Indicated: Requesting more information"
+    ]
+  }
+]

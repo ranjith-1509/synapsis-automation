@@ -1,0 +1,99 @@
+{
+  "name": "MOA-AI",
+  "version": "0.1.0",
+  "description": "MOA AI desktop app",
+  "private": true,
+  "dependencies": {
+    "@ant-design/icons": "^6.1.0",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^13.5.0",
+    "antd": "^5.27.5",
+    "autoprefixer": "^10.4.16",
+    "lottie-react": "^2.4.1",
+    "postcss": "^8.4.31",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.9.4",
+    "react-scripts": "5.0.1",
+    "tailwindcss": "^3.3.5",
+    "web-vitals": "^2.1.4"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "react-start": "set BROWSER=none&& react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "electron": "cross-env ELECTRON_START_URL=http://localhost:3000 electron .",
+    "electron:dev": "concurrently \"npm run react-start\" \"wait-on http://localhost:3000 && npm run electron\"",
+    "build:win": "npm run build && electron-builder --win --x64",
+    "electron-pack": "electron-builder -c.extraMetadata.main=build/electron.js",
+    "preelectron-pack": "npm run build",
+    "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css,scss,md}\"",
+    "format:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx,json,css,scss,md}\""
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "main": "electron/main.js",
+  "author": "MOA AI",
+  "build": {
+    "extends": null,
+    "appId": "com.moa.ai",
+    "productName": "MOA AI",
+    "asar": true,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "build/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "main": "electron/main.js"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "electron": "^38.2.2",
+    "electron-builder": "^26.0.12",
+    "electron-is-dev": "^3.0.1",
+    "prettier": "^3.6.2",
+    "wait-on": "^7.2.0"
+  }
+}

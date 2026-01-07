@@ -1,0 +1,83 @@
+[
+  {
+    "key": "1",
+    "fileName": "Dr. RajeshKumar_0012_55921",
+    "category": "Referral",
+    "tags": "Refer, Urgent",
+    "reason": "Referral document indicates an urgent consultation for cardiac evaluation.",
+    "status": "Completed",
+    "pdfFile": "src/images/Referral_Report_1.pdf",
+    "severityLevel": "High",
+    "confidence": 10,
+    "referralInfo": [
+      "Specialist Name: Dr. Anjali Menon",
+      "Receiving Physician: Dr. Rajesh Kumar",
+      "Patient Name: Mr. Prakash Nair",
+      "Patient ID: 459871",
+      "Main Medical Problem: Chest discomfort with shortness of breath",
+      "Consultation Type: Emergency cardiac assessment",
+      "Outcome Indicated: Immediate ECG and stress test advised"
+    ]
+  },
+  {
+    "key": "2",
+    "fileName": "Dr. SnehaVarma_0014_56233",
+    "category": "Referral",
+    "tags": "Assessment, Referral",
+    "reason": "Referral includes moderate risk indicators for endocrine review.",
+    "status": "Completed",
+    "pdfFile": "src/images/Referral_Report_2.pdf",
+    "severityLevel": "None",
+    "confidence": 80,
+    "referralInfo": [
+      "Specialist Name: Dr. Rohit Sharma",
+      "Receiving Physician: Dr. Sneha Varma",
+      "Patient Name: Mrs. Kavitha Rao",
+      "Patient ID: 458392",
+      "Main Medical Problem: Thyroid imbalance and fatigue",
+      "Consultation Type: Endocrinology review",
+      "Outcome Indicated: Blood test and medication adjustment"
+    ]
+  },
+  {
+    "key": "3",
+    "fileName": "Dr. MichaelClark_0015_56312",
+    "category": "Referral",
+    "tags": "Follow-up, Refer",
+    "reason": "Detected document suggests follow-up for mild orthopedic issue.",
+    "status": "Completed",
+    "pdfFile": "src/images/Referral_Report_3.pdf",
+    "severityLevel": "Medium",
+    "confidence": 60,
+    "referralInfo": [
+      "Specialist Name: Dr. Emily Turner",
+      "Receiving Physician: Dr. Michael Clark",
+      "Patient Name: Mr. David Lee",
+      "Patient ID: 484211",
+      "Main Medical Problem: Mild knee pain from sports injury",
+      "Consultation Type: Physiotherapy referral",
+      "Outcome Indicated: Recommended strengthening exercises"
+    ]
+  },
+  {
+    "key": "4",
+    "fileName": "Dr. AishaKhan_0017_56421",
+    "category": "Referral",
+    "tags": "Refer, Review",
+    "reason": "Low-risk document pattern consistent with general follow-up.",
+    "status": "Completed",
+    "pdfFile": "src/images/Referral_Report_4.pdf",
+    "severityLevel": "None",
+    "confidence": 40,
+
+    "referralInfo": [
+      "Specialist Name: Dr. Aisha Khan",
+      "Receiving Physician: Dr. Rohan Desai",
+      "Patient Name: Ms. Nivedita Sharma",
+      "Patient ID: 478563",
+      "Main Medical Problem: Post-surgery wound check",
+      "Consultation Type: Routine review",
+      "Outcome Indicated: Healing observed, continue current medication"
+    ]
+  }
+]

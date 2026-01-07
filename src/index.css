@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global Primary Color Variables */
+:root {
+  --primary-color: #0066ef;
+  --primary-hover: #0052cc;
+  --primary-light: #e6f2ff;
+}
+
+body {
+  margin: 0;
+  font-family: "Inter", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Global Button Styles */
+.ant-btn-primary {
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+}
+
+.ant-btn-primary:hover,
+.ant-btn-primary:focus {
+  background-color: var(--primary-hover) !important;
+  border-color: var(--primary-hover) !important;
+}
+
+/* Global Menu Selected Styles */
+.ant-menu-item-selected {
+  background-color: var(--primary-color) !important;
+  color: white !important;
+}
+
+.ant-menu-item-selected .anticon {
+  color: white !important;
+}
+
+/* Global Icon Styles */
+/* Global Tag Styles */
+.ant-tag {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+
+.custom-table .ant-table-thead > tr > th {
+  background: transparent;
+  font-weight: 500;
+  font-size: 14px;
+  color: #667085;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.p_content {
+  font-family: Inter;
+  font-weight: 500;
+  font-style: Medium;
+  font-size: 12px;
+  leading-trim: NONE;
+  line-height: 20px;
+  letter-spacing: -2%;
+  color: #757575 !important;
+}
+.custom-search-input {
+  box-shadow: 0px 8px 16px 0px #0f172a05;
+
+  box-shadow: 0px 4px 8px 0px #0f172a08;
+}
+.custom-search-input {
+}
+
+.ant-input-affix-wrapper.custom-search-input {
+  box-shadow: 0px 4px 8px 0px rgba(15, 23, 42, 0.08);
+  border-radius: 20px !important;
+}
+
+.ant-input-affix-wrapper.custom-search-input:hover,
+.ant-input-affix-wrapper.custom-search-input:focus-within {
+  box-shadow: 0px 8px 16px 0px rgba(15, 23, 42, 0.05);
+}
+
+.toast_typo {
+  font-family: Inter;
+  font-weight: 400;
+  font-style: Regular;
+  font-size: 16px;
+  leading-trim: NONE;
+  line-height: 24px;
+  letter-spacing: 0px;
+  vertical-align: middle;
+}
