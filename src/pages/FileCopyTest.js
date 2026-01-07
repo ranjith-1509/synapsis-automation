@@ -268,7 +268,7 @@ const FileCopyTest = () => {
 
   return (
     <MainLayout>
-      <div className="max-w-4xl h-full mx-auto sm:px-6 lg:px-8" style={{ marginLeft: "200px" }}>
+      <div className="max-w-5xl w-full h-full mx-auto sm:px-6 lg:px-8">
         <div
           style={{ borderRadius: "24px" }}
           className="bg-white border border-gray-200 overflow-hidden shadow-sm p-6"

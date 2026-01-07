@@ -1,48 +1,31 @@
-import React from 'react';
-import { Input } from 'antd';
-import { SearchOutlined } from '@ant-design/icons';
-import { SearchIcon } from '../icons/Icons';
+import React from "react";
 
-const MainLayout = ({ children, title, subtitle }) => {
+const MainLayout = ({ children }) => {
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Top Header - Static for all pages */}
-      <div className="px-6 pt-4">
-        <div className="flex justify-between items-center">
-          <div style={{ marginLeft: "230px" }}>
-            <h1 style={{ display: "inline" }} className="p_content">
-              Hi Preetam,
-            </h1>
-            <p className="text-xl font-semibold text-gray-900">
-              Welcome to MOA AI
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="relative flex items-center gap-4">
-              <div style={{ width: "400px", marginBottom: "5px" }}>
-                <Input
-                  placeholder="Search..."
-                  style={{ borderRadius: "20px", height: "40px" }}
-                  prefix={<SearchOutlined style={{ color: "#aaa" }} />}
-                  className="custom-search-input"
-                />
-              </div>
-              <SearchIcon className="w-12 h-12"/>
-
-              <img
-                className="h-10 w-10 rounded-full mb-2"
-                src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                alt="User profile"
-              />
+    <div className="min-h-screen bg-gradient-to-b from-[#f7f9fc] to-[#eef2f7]">
+      <header className="px-6 pt-8">
+        <div className="max-w-6xl mx-auto flex flex-col gap-2">
+          <p className="text-sm font-semibold text-blue-600 tracking-[0.15em] uppercase">
+            Automation Center
+          </p>
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">PowerShell Automation</h1>
+              <p className="text-base text-gray-600">
+                Run desktop automations, file utilities, and diagnostics in one place.
+              </p>
+            </div>
+            <div className="text-right">
+              <span className="inline-flex items-center px-3 py-1 text-xs font-semibold text-blue-700 bg-blue-100 rounded-full">
+                Live demo
+              </span>
+              <p className="text-xs text-gray-500 mt-1">Requires Electron runtime</p>
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Page Content */}
-      <main className="max-w-10xl mx-auto py-6 sm:px-6 lg:px-8">
-        {children}
-      </main>
+      <main className="max-w-6xl mx-auto py-8 sm:px-6 lg:px-8">{children}</main>
     </div>
   );
 };
