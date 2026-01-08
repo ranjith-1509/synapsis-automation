@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from "react";
-import { Button, message, Modal, Card, Tag, Divider, Space } from "antd";
+import React, { useMemo, useState, useEffect } from "react";
+import { Button, message, Modal, Card, Tag, Divider, Space, Table } from "antd";
 import {
   ThunderboltFilled,
   CodeOutlined,
   ClockCircleOutlined,
   SafetyCertificateFilled,
+  CalendarOutlined,
 } from "@ant-design/icons";
 import MainLayout from "../components/Layout/MainLayout";
 
@@ -14,12 +15,14 @@ const Home = () => {
   const [stopLoading, setStopLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [demoLoading, setDemoLoading] = useState({});
+  const [fetchAppointmentsLoading, setFetchAppointmentsLoading] = useState(false);
+  const [appointments, setAppointments] = useState([]);
   const [outputModal, setOutputModal] = useState({
     visible: false,
     title: "",
     content: "",
   });
-
+  console.log(appointments, "loi");
   const actionBadges = useMemo(
     () => [
       { label: "File Ops", color: "blue" },
@@ -252,9 +255,128 @@ const Home = () => {
     }
   };
 
+  const handleFetchAppointments = async () => {
+    debugger;
+    if (!window.electronAPI) {
+      showNotElectron();
+      return;
+    }
+
+    setFetchAppointmentsLoading(true);
+    try {
+      const result = await window.electronAPI.fetchAppointments();
+      console.log(result, "loi");
+      if (result?.success) {
+        setAppointments(result.appointments || []);
+        if (result.appointments && result.appointments.length > 0) {
+          message.success(`Fetched ${result.appointments.length} appointment(s) for today`);
+        } else {
+          message.info("No appointments found for today");
+        }
+      } else {
+        message.error(result?.error || "Failed to fetch appointments");
+        setAppointments([]);
+      }
+    } catch (error) {
+      console.log(error, "loi");
+      message.error(`Error: ${error.message || "Unknown error occurred"}`);
+      console.error("Exception:", error);
+      setAppointments([]);
+    } finally {
+      setFetchAppointmentsLoading(false);
+    }
+  };
+
+  // Add event listener for fetch-btn button (for non-React event handling if needed)
+  useEffect(() => {
+    const fetchBtn = document.getElementById("fetch-btn");
+    if (fetchBtn) {
+      const handleClick = () => {
+        handleFetchAppointments();
+      };
+      fetchBtn.addEventListener("click", handleClick);
+      return () => {
+        fetchBtn.removeEventListener("click", handleClick);
+      };
+    }
+  }, []);
+
+  // Table columns for appointments
+  const appointmentColumns = [
+    {
+      title: "Time",
+      dataIndex: "time",
+      key: "time",
+      width: 120,
+      render: (text) => <span style={{ fontFamily: "monospace", fontWeight: 500 }}>{text}</span>,
+    },
+    {
+      title: "Patient Name",
+      dataIndex: "name",
+      key: "name",
+      ellipsis: true,
+    },
+    {
+      title: "Health Card Number",
+      dataIndex: "hcn",
+      key: "hcn",
+      width: 180,
+      render: (hcn) => (
+        <Tag color={hcn === "HCN Missing" ? "red" : "green"} style={{ fontFamily: "monospace" }}>
+          {hcn}
+        </Tag>
+      ),
+    },
+    {
+      title: "Description",
+      dataIndex: "description",
+      key: "description",
+      ellipsis: true,
+      render: (text) => text || <span style={{ color: "#999" }}>No description</span>,
+    },
+  ];
+
   return (
     <MainLayout>
       <div className="max-w-6xl w-full h-full mx-auto px-4 lg:px-0">
+        <Card className="glass-card mb-6" bodyStyle={{ padding: 20 }}>
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+            <div>
+              <div className="section-title flex items-center gap-2">
+                <CalendarOutlined style={{ color: "#1677ff" }} />
+                Google Calendar Appointments
+              </div>
+              <div className="muted text-sm">
+                Fetch today's appointments from your Google Calendar and view patient information.
+              </div>
+            </div>
+            <Button
+              id="fetch-btn"
+              type="primary"
+              size="large"
+              icon={<CalendarOutlined />}
+              onClick={handleFetchAppointments}
+              loading={fetchAppointmentsLoading}
+              style={{ background: "#1677ff", borderColor: "#1677ff" }}
+            >
+              Fetch Today's Appointments
+            </Button>
+          </div>
+        </Card>
+
+        {appointments.length > 0 && (
+          <Card className="glass-card mb-6" bodyStyle={{ padding: 20 }}>
+            <div className="section-title mb-4">Today's Appointments ({appointments.length})</div>
+            <Table
+              columns={appointmentColumns}
+              dataSource={appointments.map((apt, idx) => ({ ...apt, key: idx }))}
+              pagination={appointments.length > 10 ? { pageSize: 10 } : false}
+              size="middle"
+              scroll={{ x: "max-content" }}
+            />
+          </Card>
+        )}
+
         <Card className="glass-card" bodyStyle={{ padding: 20 }}>
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
             <div>

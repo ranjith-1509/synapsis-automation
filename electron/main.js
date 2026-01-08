@@ -1,6 +1,8 @@
 const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
 const { spawn } = require("child_process"); // Use spawn instead of exec
+const fs = require("fs");
+const { google } = require("googleapis");
 
 let mainWindow;
 let backendProcess = null;
@@ -152,6 +154,285 @@ ipcMain.handle("execute-powershell", async (event, command) => {
       }
     });
   });
+});
+
+// 🔹 Google Calendar OAuth2 Setup
+const TOKEN_PATH = path.join(app.getPath("userData"), "token.json");
+const CREDENTIALS_PATH = path.join(app.getAppPath(), "credentials.json");
+
+const SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"];
+
+/**
+ * Load or request authorization for Google Calendar
+ */
+async function authorize() {
+  let client = null;
+
+  // Check if credentials.json exists
+  if (!fs.existsSync(CREDENTIALS_PATH)) {
+    throw new Error(
+      `Credentials file not found at ${CREDENTIALS_PATH}. Please create credentials.json with your OAuth2 client secrets.`
+    );
+  }
+
+  const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH));
+  const { client_secret, client_id, redirect_uris } = credentials.installed || credentials.web;
+
+  // Use the first redirect URI from credentials, or default to http://localhost
+  // For Electron apps, http://localhost is the standard redirect URI
+  const redirectUri =
+    redirect_uris && redirect_uris.length > 0 ? redirect_uris[0] : "http://localhost";
+
+  const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirectUri);
+
+  // Check if we have previously stored a token
+  let token = null;
+  if (fs.existsSync(TOKEN_PATH)) {
+    try {
+      token = JSON.parse(fs.readFileSync(TOKEN_PATH));
+      oAuth2Client.setCredentials(token);
+    } catch (err) {
+      console.error("Error reading token file:", err);
+    }
+  }
+
+  // If no token or token is invalid, get a new one
+  if (!token || !token.access_token) {
+    return getNewToken(oAuth2Client);
+  }
+
+  // Check if token is expired and refresh if needed
+  if (token.expiry_date && token.expiry_date < Date.now()) {
+    try {
+      const { credentials: newCredentials } = await oAuth2Client.refreshAccessToken();
+      oAuth2Client.setCredentials(newCredentials);
+      await saveToken(newCredentials);
+      return oAuth2Client;
+    } catch (err) {
+      console.error("Error refreshing token:", err);
+      return getNewToken(oAuth2Client);
+    }
+  }
+
+  return oAuth2Client;
+}
+
+/**
+ * Get and store new token after prompting for user authorization
+ */
+function getNewToken(oAuth2Client) {
+  return new Promise((resolve, reject) => {
+    const authUrl = oAuth2Client.generateAuthUrl({
+      access_type: "offline",
+      scope: SCOPES,
+      prompt: "consent", // Force consent to get refresh token
+    });
+
+    // Create a window to handle OAuth flow
+    const authWindow = new BrowserWindow({
+      width: 500,
+      height: 600,
+      show: true,
+      modal: true,
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+      },
+    });
+
+    authWindow.loadURL(authUrl);
+
+    authWindow.on("closed", () => {
+      reject(new Error("Authentication window was closed"));
+    });
+
+    // Handle the OAuth callback
+    const handleNavigation = (url) => {
+      try {
+        // Check for OAuth callback with code parameter
+        if (
+          url &&
+          (url.includes("localhost") || url.includes("127.0.0.1") || url.includes("code="))
+        ) {
+          const urlObj = new URL(url);
+          const code = urlObj.searchParams.get("code");
+          const error = urlObj.searchParams.get("error");
+
+          if (error) {
+            authWindow.close();
+            reject(new Error(`OAuth error: ${error}`));
+            return true;
+          }
+
+          if (code) {
+            // Remove all listeners to prevent multiple calls
+            authWindow.webContents.removeAllListeners("will-redirect");
+            authWindow.webContents.removeAllListeners("did-get-redirect-request");
+            authWindow.webContents.removeAllListeners("did-navigate");
+            authWindow.close();
+
+            oAuth2Client.getToken(code, (err, token) => {
+              if (err) {
+                console.error("Error retrieving access token", err);
+                reject(err);
+                return;
+              }
+              oAuth2Client.setCredentials(token);
+              saveToken(token)
+                .then(() => resolve(oAuth2Client))
+                .catch(reject);
+            });
+            return true;
+          }
+        }
+      } catch (err) {
+        // URL parsing error, continue
+        console.log("Navigation URL parsing:", err.message);
+      }
+      return false;
+    };
+
+    authWindow.webContents.on("will-redirect", (event, navigationUrl) => {
+      if (handleNavigation(navigationUrl)) {
+        event.preventDefault();
+      }
+    });
+
+    authWindow.webContents.on("did-get-redirect-request", (event, oldUrl, newUrl) => {
+      if (handleNavigation(newUrl)) {
+        event.preventDefault();
+      }
+    });
+
+    authWindow.webContents.on("did-navigate", (event, url) => {
+      handleNavigation(url);
+    });
+  });
+}
+
+/**
+ * Store token to disk
+ */
+function saveToken(token) {
+  return new Promise((resolve, reject) => {
+    fs.writeFile(TOKEN_PATH, JSON.stringify(token), (err) => {
+      if (err) {
+        reject(err);
+      } else {
+        console.log("Token stored to", TOKEN_PATH);
+        resolve();
+      }
+    });
+  });
+}
+
+/**
+ * Parse event title to extract HCN and Patient Name
+ * Format: [1234567890] Patient Name or variations
+ */
+function parseEventTitle(title) {
+  const hcnRegex = /\[(\d+)\]/;
+  const match = title.match(hcnRegex);
+
+  let hcn = "HCN Missing";
+  let name = title.trim();
+
+  if (match) {
+    hcn = match[1];
+    // Extract name after the HCN bracket
+    const namePart = title.substring(match.index + match[0].length).trim();
+    // Remove any leading/trailing dashes, colons, or spaces
+    name = namePart.replace(/^[-:\s]+/, "").trim() || "Unknown Patient";
+  }
+
+  return { hcn, name };
+}
+
+/**
+ * Get today's date range in ISO format (00:00:00 to 23:59:59)
+ */
+function getTodayDateRange() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+
+  const startOfDay = `${year}-${month}-${day}T00:00:00`;
+  const endOfDay = `${year}-${month}-${day}T23:59:59`;
+
+  // Get timezone offset
+  const tzOffset = -now.getTimezoneOffset();
+  const tzHours = String(Math.floor(Math.abs(tzOffset) / 60)).padStart(2, "0");
+  const tzMinutes = String(Math.abs(tzOffset) % 60).padStart(2, "0");
+  const tzSign = tzOffset >= 0 ? "+" : "-";
+  const timezone = `${tzSign}${tzHours}:${tzMinutes}`;
+
+  return {
+    timeMin: `${startOfDay}${timezone}`,
+    timeMax: `${endOfDay}${timezone}`,
+  };
+}
+
+// 🔹 IPC handler for fetching Google Calendar appointments
+ipcMain.handle("fetch-appointments", async (event) => {
+  try {
+    // Authorize and get OAuth2 client
+    const auth = await authorize();
+    const calendar = google.calendar({ version: "v3", auth });
+
+    // Get today's date range
+    const { timeMin, timeMax } = getTodayDateRange();
+
+    // Fetch events from primary calendar
+    const response = await calendar.events.list({
+      calendarId: "primary",
+      timeMin: timeMin,
+      timeMax: timeMax,
+      maxResults: 100,
+      singleEvents: true,
+      orderBy: "startTime",
+    });
+
+    const events = response.data.items || [];
+
+    // Parse events and extract HCN and patient names
+    const appointments = events.map((event) => {
+      const { hcn, name } = parseEventTitle(event.summary || "Untitled Event");
+      const start = event.start?.dateTime || event.start?.date || "No time";
+      const description = event.description || "";
+
+      // Format time for display
+      let time = start;
+      if (start !== "No time" && start.includes("T")) {
+        try {
+          const date = new Date(start);
+          time = date.toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+          });
+        } catch (e) {
+          // Keep original if parsing fails
+        }
+      }
+
+      return {
+        time,
+        name,
+        hcn,
+        description,
+      };
+    });
+
+    return { success: true, appointments };
+  } catch (error) {
+    console.error("Error fetching appointments:", error);
+    return {
+      success: false,
+      error: error.message || "Failed to fetch appointments",
+      appointments: [],
+    };
+  }
 });
 
 // 🔹 App lifecycle
