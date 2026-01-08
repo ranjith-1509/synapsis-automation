@@ -1,6 +1,6 @@
 import React from "react";
 import { ConfigProvider, App as AntdApp } from "antd";
-import FileCopyTest from "./pages/FileCopyTest";
+import Home from "./pages/Home";
 import "./App.css";
 
 const App = () => {
@@ -15,7 +15,7 @@ const App = () => {
     >
       <AntdApp>
         <div className="App" style={{ minHeight: "100vh", background: "#f5f7fb" }}>
-          <FileCopyTest />
+          <Home />
         </div>
       </AntdApp>
     </ConfigProvider>

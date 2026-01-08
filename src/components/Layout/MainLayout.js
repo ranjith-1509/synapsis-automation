@@ -3,7 +3,7 @@ import React from "react";
 const MainLayout = ({ children }) => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#f7f9fc] to-[#eef2f7]">
-      <header className="px-6 pt-8">
+      <header className="px-6 pt-8 pb-4">
         <div className="max-w-6xl mx-auto flex flex-col gap-2">
           <p className="text-sm font-semibold text-blue-600 tracking-[0.15em] uppercase">
             Automation Center
@@ -25,10 +25,9 @@ const MainLayout = ({ children }) => {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto py-8 sm:px-6 lg:px-8">{children}</main>
+      <main className="max-w-6xl mx-auto pb-10">{children}</main>
     </div>
   );
 };
 
 export default MainLayout;
-
