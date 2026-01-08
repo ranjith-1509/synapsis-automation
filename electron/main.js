@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require("electron");
+const { app, BrowserWindow, ipcMain, shell } = require("electron");
 const path = require("path");
 const { spawn } = require("child_process"); // Use spawn instead of exec
 const fs = require("fs");
@@ -154,6 +154,136 @@ ipcMain.handle("execute-powershell", async (event, command) => {
       }
     });
   });
+});
+
+// 🔹 IPC handler for fetching patient files by HCN
+ipcMain.handle("fetch-patient-files", async (event, hcn) => {
+  return new Promise((resolve, reject) => {
+    const { exec } = require("child_process");
+
+    if (!hcn || hcn === "HCN Missing") {
+      resolve({ success: false, error: "Invalid HCN provided", files: [] });
+      return;
+    }
+
+    // PowerShell command to find files containing the HCN
+    // Search in D:\Sample_reports directory
+    const psCommand = `
+      $searchPath = 'D:\\Sample_reports'
+      $hcn = '${hcn}'
+      
+      if (-not (Test-Path $searchPath)) {
+        Write-Host "ERROR: Directory not found: $searchPath"
+        exit 1
+      }
+      
+      try {
+        $files = Get-ChildItem -Path $searchPath -Recurse -File -ErrorAction SilentlyContinue | 
+          Where-Object { $_.Name -like "*$hcn*" -or $_.FullName -like "*$hcn*" }
+        
+        $result = @()
+        foreach ($file in $files) {
+          $result += @{
+            fileName = $file.Name
+            fullPath = $file.FullName
+          }
+        }
+        
+        # Output as JSON array
+        $result | ConvertTo-Json -Compress
+      } catch {
+        Write-Host "ERROR: $($_.Exception.Message)"
+        exit 1
+      }
+    `;
+
+    exec(psCommand, { shell: "powershell.exe", encoding: "utf8" }, (error, stdout, stderr) => {
+      if (error) {
+        console.error("Error fetching patient files:", error);
+        resolve({
+          success: false,
+          error: error.message || "Failed to search for files",
+          files: [],
+        });
+        return;
+      }
+
+      try {
+        // Parse PowerShell output
+        const output = stdout.trim();
+
+        // Check if directory doesn't exist
+        if (output.includes("ERROR: Directory not found")) {
+          resolve({
+            success: false,
+            error: `Directory not found: D:\\Sample_reports`,
+            files: [],
+          });
+          return;
+        }
+
+        // Check for other errors
+        if (output.includes("ERROR:")) {
+          const errorMsg = output.match(/ERROR: (.+)/)?.[1] || "Unknown error";
+          resolve({
+            success: false,
+            error: errorMsg,
+            files: [],
+          });
+          return;
+        }
+
+        // Parse JSON array from PowerShell output
+        let files = [];
+        if (output && output.trim() !== "") {
+          try {
+            // PowerShell ConvertTo-Json outputs array directly
+            const parsed = JSON.parse(output);
+            files = Array.isArray(parsed) ? parsed : [parsed];
+          } catch (parseError) {
+            // If parsing fails, try to extract individual JSON objects
+            const jsonMatches = output.match(/\{[^}]+\}/g);
+            if (jsonMatches) {
+              files = jsonMatches
+                .map((match) => {
+                  try {
+                    return JSON.parse(match);
+                  } catch (e) {
+                    return null;
+                  }
+                })
+                .filter((f) => f !== null);
+            } else {
+              console.error("Failed to parse PowerShell output:", output);
+            }
+          }
+        }
+
+        resolve({
+          success: true,
+          files: files || [],
+        });
+      } catch (parseError) {
+        console.error("Error parsing file list:", parseError);
+        resolve({
+          success: false,
+          error: "Failed to parse file list",
+          files: [],
+        });
+      }
+    });
+  });
+});
+
+// 🔹 IPC handler for opening file paths
+ipcMain.handle("open-path", async (event, filePath) => {
+  try {
+    await shell.openPath(filePath);
+    return { success: true };
+  } catch (error) {
+    console.error("Error opening file:", error);
+    return { success: false, error: error.message };
+  }
 });
 
 // 🔹 Google Calendar OAuth2 Setup
@@ -328,17 +458,20 @@ function saveToken(token) {
 
 /**
  * Parse event title to extract HCN and Patient Name
- * Format: [1234567890] Patient Name or variations
+ * Format: [HCN1001] Ravi Kumar or [1234567890] Patient Name
+ * Supports alphanumeric HCNs like HCN1001, HCN1234, etc.
  */
 function parseEventTitle(title) {
-  const hcnRegex = /\[(\d+)\]/;
+  // Match alphanumeric characters (letters and numbers) inside brackets
+  // Examples: [HCN1001], [HCN1234], [1234567890], [ABC123]
+  const hcnRegex = /\[([A-Z0-9]+)\]/i;
   const match = title.match(hcnRegex);
 
   let hcn = "HCN Missing";
   let name = title.trim();
 
   if (match) {
-    hcn = match[1];
+    hcn = match[1].toUpperCase(); // Normalize to uppercase for consistency
     // Extract name after the HCN bracket
     const namePart = title.substring(match.index + match[0].length).trim();
     // Remove any leading/trailing dashes, colons, or spaces

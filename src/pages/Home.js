@@ -6,6 +6,8 @@ import {
   ClockCircleOutlined,
   SafetyCertificateFilled,
   CalendarOutlined,
+  FileTextOutlined,
+  FolderOpenOutlined,
 } from "@ant-design/icons";
 import MainLayout from "../components/Layout/MainLayout";
 
@@ -17,6 +19,13 @@ const Home = () => {
   const [demoLoading, setDemoLoading] = useState({});
   const [fetchAppointmentsLoading, setFetchAppointmentsLoading] = useState(false);
   const [appointments, setAppointments] = useState([]);
+  const [patientFilesModal, setPatientFilesModal] = useState({
+    visible: false,
+    loading: false,
+    hcn: "",
+    patientName: "",
+    files: [],
+  });
   const [outputModal, setOutputModal] = useState({
     visible: false,
     title: "",
@@ -301,6 +310,70 @@ const Home = () => {
     }
   }, []);
 
+  // Handle fetching patient files
+  const handleGetLatestDoc = async (hcn, patientName) => {
+    if (hcn === "HCN Missing") {
+      message.warning("Cannot fetch files: Health Card Number is missing");
+      return;
+    }
+
+    setPatientFilesModal({
+      visible: true,
+      loading: true,
+      hcn: hcn,
+      patientName: patientName,
+      files: [],
+    });
+
+    try {
+      if (!window.electronAPI) {
+        showNotElectron();
+        return;
+      }
+
+      const result = await window.electronAPI.fetchPatientFiles(hcn);
+
+      if (result?.success) {
+        setPatientFilesModal((prev) => ({
+          ...prev,
+          loading: false,
+          files: result.files || [],
+        }));
+
+        if (!result.files || result.files.length === 0) {
+          message.info(`No files found for HCN: ${hcn}`);
+        }
+      } else {
+        message.error(result?.error || "Failed to fetch patient files");
+        setPatientFilesModal((prev) => ({
+          ...prev,
+          loading: false,
+          files: [],
+        }));
+      }
+    } catch (error) {
+      message.error(`Error: ${error.message || "Unknown error occurred"}`);
+      setPatientFilesModal((prev) => ({
+        ...prev,
+        loading: false,
+        files: [],
+      }));
+    }
+  };
+
+  // Handle opening file
+  const handleOpenFile = async (filePath) => {
+    try {
+      if (!window.electronAPI) {
+        showNotElectron();
+        return;
+      }
+      await window.electronAPI.openPath(filePath);
+    } catch (error) {
+      message.error(`Failed to open file: ${error.message}`);
+    }
+  };
+
   // Table columns for appointments
   const appointmentColumns = [
     {
@@ -333,6 +406,27 @@ const Home = () => {
       key: "description",
       ellipsis: true,
       render: (text) => text || <span style={{ color: "#999" }}>No description</span>,
+    },
+    {
+      title: "Action",
+      key: "action",
+      width: 150,
+      render: (_, record) => (
+        <Button
+          type="primary"
+          size="small"
+          icon={<FileTextOutlined />}
+          onClick={() => handleGetLatestDoc(record.hcn, record.name)}
+          className="getlatestDoc-btn"
+          style={{
+            background: "#52c41a",
+            borderColor: "#52c41a",
+            fontSize: "12px",
+          }}
+        >
+          getlatestDoc
+        </Button>
+      ),
     },
   ];
 
@@ -610,8 +704,202 @@ const Home = () => {
           {outputModal.content || "No output available"}
         </div>
       </Modal>
+
+      {/* Patient Files Modal */}
+      <Modal
+        title={
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <FolderOpenOutlined style={{ color: "#1677ff" }} />
+            <span>Patient Reports - {patientFilesModal.patientName}</span>
+            {patientFilesModal.hcn && (
+              <Tag color="green" style={{ marginLeft: "8px" }}>
+                HCN: {patientFilesModal.hcn}
+              </Tag>
+            )}
+          </div>
+        }
+        open={patientFilesModal.visible}
+        onCancel={() =>
+          setPatientFilesModal({
+            visible: false,
+            loading: false,
+            hcn: "",
+            patientName: "",
+            files: [],
+          })
+        }
+        footer={[
+          <Button
+            key="close"
+            type="primary"
+            onClick={() =>
+              setPatientFilesModal({
+                visible: false,
+                loading: false,
+                hcn: "",
+                patientName: "",
+                files: [],
+              })
+            }
+          >
+            Close
+          </Button>,
+        ]}
+        width={700}
+        className="patient-files-modal"
+      >
+        {patientFilesModal.loading ? (
+          <div style={{ textAlign: "center", padding: "40px" }}>
+            <div className="loading-spinner" />
+            <p style={{ marginTop: "16px", color: "#666" }}>Searching for patient files...</p>
+          </div>
+        ) : patientFilesModal.files.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "40px" }}>
+            <FileTextOutlined style={{ fontSize: "48px", color: "#ccc" }} />
+            <p style={{ marginTop: "16px", color: "#999" }}>No files found for this patient</p>
+          </div>
+        ) : (
+          <div className="patient-files-list">
+            <div style={{ marginBottom: "16px", color: "#666", fontSize: "14px" }}>
+              Found {patientFilesModal.files.length} file(s):
+            </div>
+            {patientFilesModal.files.map((file, index) => (
+              <Card
+                key={index}
+                size="small"
+                style={{
+                  marginBottom: "12px",
+                  border: "1px solid #e8e8e8",
+                  borderRadius: "6px",
+                }}
+                bodyStyle={{ padding: "12px 16px" }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <div style={{ flex: 1 }}>
+                    <div
+                      style={{
+                        fontWeight: 500,
+                        color: "#1677ff",
+                        marginBottom: "4px",
+                        wordBreak: "break-all",
+                      }}
+                    >
+                      {file.fileName}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: "#999",
+                        fontFamily: "monospace",
+                        wordBreak: "break-all",
+                      }}
+                    >
+                      {file.fullPath}
+                    </div>
+                  </div>
+                  <Button
+                    type="primary"
+                    icon={<FolderOpenOutlined />}
+                    onClick={() => handleOpenFile(file.fullPath)}
+                    style={{ marginLeft: "12px" }}
+                  >
+                    Open
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </Modal>
     </MainLayout>
   );
 };
 
 export default Home;
+
+// Professional Medical Interface Styling
+const style = document.createElement("style");
+style.textContent = `
+  .patient-files-modal .ant-modal-content {
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  }
+
+  .patient-files-modal .ant-modal-header {
+    border-bottom: 2px solid #e8e8e8;
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px 12px 0 0;
+  }
+
+  .patient-files-modal .ant-modal-title {
+    color: white;
+    font-weight: 600;
+    font-size: 18px;
+  }
+
+  .patient-files-modal .ant-modal-body {
+    padding: 24px;
+    background: #fafafa;
+  }
+
+  .patient-files-list {
+    max-height: 60vh;
+    overflow-y: auto;
+    padding-right: 8px;
+  }
+
+  .patient-files-list::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .patient-files-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+
+  .patient-files-list::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+  }
+
+  .patient-files-list::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
+
+  .getlatestDoc-btn {
+    transition: all 0.3s ease;
+  }
+
+  .getlatestDoc-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(82, 196, 26, 0.3);
+  }
+
+  .loading-spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #1677ff;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .patient-files-modal .ant-modal-mask {
+    background-color: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(4px);
+  }
+`;
+document.head.appendChild(style);
